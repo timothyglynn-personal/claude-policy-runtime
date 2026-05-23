@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Policy Runtime — AI Treasury Analyst Demo</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0e1a; color: #e2e8f0; font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace; min-height: 100vh; padding: 20px; }
+.container { max-width: 900px; margin: 0 auto; }
+.header { text-align: center; padding: 40px 20px; border: 1px solid #1e293b; border-radius: 12px; margin-bottom: 30px; background: linear-gradient(135deg, #0f172a, #1e1b4b); }
+.header h1 { font-size: 1.8em; color: #a78bfa; margin-bottom: 8px; }
+.header .subtitle { color: #64748b; font-size: 0.85em; }
+.header .thesis { color: #f59e0b; font-size: 0.9em; margin-top: 16px; font-style: italic; }
+.scenario-buttons { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 30px; }
+.scenario-btn { padding: 10px 18px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; cursor: pointer; font-size: 0.8em; font-family: inherit; transition: all 0.2s; }
+.scenario-btn:hover { border-color: #a78bfa; background: #2d2055; }
+.scenario-btn.active { border-color: #a78bfa; background: #3b2d6b; color: #a78bfa; }
+.terminal { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; overflow: hidden; }
+.terminal-header { background: #1e293b; padding: 10px 16px; display: flex; align-items: center; gap: 8px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; }
+.dot-red { background: #ef4444; }
+.dot-yellow { background: #f59e0b; }
+.dot-green { background: #22c55e; }
+.terminal-title { margin-left: 12px; color: #64748b; font-size: 0.75em; }
+.terminal-body { padding: 24px; min-height: 500px; }
+.line { margin-bottom: 6px; opacity: 0; animation: fadeIn 0.3s ease forwards; }
+.line.visible { opacity: 1; }
+.prompt { color: #22c55e; }
+.section-header { color: #f59e0b; font-weight: bold; margin-top: 16px; margin-bottom: 8px; font-size: 0.9em; }
+.check-pass { color: #22c55e; }
+.check-fail { color: #ef4444; }
+.check-warn { color: #f59e0b; }
+.decision { margin-top: 16px; padding: 12px 16px; border-radius: 8px; font-weight: bold; font-size: 0.95em; }
+.decision-approved { background: #052e16; border: 1px solid #22c55e; color: #22c55e; }
+.decision-blocked { background: #2d0f0f; border: 1px solid #ef4444; color: #ef4444; }
+.decision-escalated { background: #2d1f00; border: 1px solid #f59e0b; color: #f59e0b; }
+.audit { margin-top: 16px; padding: 12px; background: #0c1222; border: 1px solid #1e293b; border-radius: 6px; font-size: 0.75em; color: #64748b; }
+.audit-entry { margin-bottom: 4px; }
+.info-panel { margin-top: 30px; padding: 20px; background: #1e1b4b; border: 1px solid #3730a3; border-radius: 12px; }
+.info-panel h3 { color: #a78bfa; margin-bottom: 12px; font-size: 0.9em; }
+.info-panel p { color: #94a3b8; font-size: 0.8em; line-height: 1.6; margin-bottom: 8px; }
+.info-panel a { color: #a78bfa; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; margin-left: 8px; }
+.badge-data { background: #1e3a5f; color: #60a5fa; }
+.badge-action { background: #3b1f1f; color: #f87171; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 600px) { body { padding: 10px; } .header h1 { font-size: 1.3em; } .scenario-buttons { flex-direction: column; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Claude Policy Runtime (CPR)</h1>
+    <div class="subtitle">AI Treasury Analyst with Policy Governance</div>
+    <div class="thesis">"The bottleneck to enterprise AI agents is not intelligence — it is delegated authority."</div>
+  </div>
+
+  <div class="scenario-buttons">
+    <button class="scenario-btn active" onclick="runScenario(0)">✅ Auto-Approved ($2M)</button>
+    <button class="scenario-btn" onclick="runScenario(1)">⚠️ Escalated ($10M)</button>
+    <button class="scenario-btn" onclick="runScenario(2)">❌ Blocked (Violations)</button>
+    <button class="scenario-btn" onclick="runScenario(3)">❌ Multi-Violation ($50M)</button>
+  </div>
+
+  <div class="terminal">
+    <div class="terminal-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="terminal-title">claude-policy-runtime — python3 run.py</span>
+    </div>
+    <div class="terminal-body" id="output"></div>
+  </div>
+
+  <div class="info-panel">
+    <h3>How This Works</h3>
+    <p><strong>Data Layer</strong> <span class="badge badge-data">READ</span> — Claude queries treasury balances and market data (like Uber's Finch agent).</p>
+    <p><strong>Action Layer</strong> <span class="badge badge-action">WRITE</span> — When Claude proposes a trade, the Policy Runtime evaluates it against human-readable rules and returns APPROVED / BLOCKED / ESCALATED.</p>
+    <p><strong>Policies are markdown files.</strong> Non-engineers can edit rules in plain English. No code changes needed. This is "Decagon-style" agent operating principles for financial operations.</p>
+    <p style="margin-top:12px;"><a href="https://github.com/timothyglynn-personal/claude-policy-runtime" target="_blank">View source on GitHub →</a></p>
+  </div>
+</div>
+
+<script>
+const scenarios = [
+  {
+    query: "Move $2M from overnight deposits into 3-month T-bills to improve yield",
+    analysis: {
+      proposed: "Reallocate $2,000,000 from Chase Overnight Deposits → US 3-Month T-Bills",
+      yield: "+0.7% yield improvement ($14,000 annualized)",
+      duration: "Portfolio duration: 1.80y → 1.80y (unchanged)",
+      confidence: "92%"
+    },
+    checks: [
+      { name: "Liquidity", status: "pass", detail: "Overnight balance $62M → $60M (above $50M minimum)" },
+      { name: "Duration", status: "pass", detail: "1.80y within 2.5y limit" },
+      { name: "Concentration", status: "pass", detail: "T-Bills at 22% (below 40% max)" },
+      { name: "Government Min", status: "pass", detail: "Government allocation 36.3% (above 30% floor)" },
+      { name: "Approval Tier", status: "pass", detail: "Trade $2M < $5M threshold — auto-approval eligible" },
+      { name: "Confidence", status: "pass", detail: "92% above 85% threshold — auto-execution eligible" }
+    ],
+    decision: "approved",
+    decisionText: "APPROVED — Trade auto-executed",
+    reason: "All policy checks passed. Amount within auto-approval limit."
+  },
+  {
+    query: "Can we move $10M from overnight deposits into 6-month T-bills for better yield?",
+    analysis: {
+      proposed: "Reallocate $10,000,000 from Chase Overnight Deposits → US 6-Month T-Bills",
+      yield: "+1.2% yield improvement ($120,000 annualized)",
+      duration: "Portfolio duration: 1.80y → 1.82y",
+      confidence: "91%"
+    },
+    checks: [
+      { name: "Liquidity", status: "pass", detail: "Overnight balance $62M → $52M (above $50M minimum)" },
+      { name: "Duration", status: "pass", detail: "1.82y within 2.5y limit" },
+      { name: "Concentration", status: "pass", detail: "T-Bills at 28% (below 40% max)" },
+      { name: "Government Min", status: "pass", detail: "Government allocation 37.8% (above 30% floor)" },
+      { name: "Approval Tier", status: "warn", detail: "Trade $10M requires Treasury Manager sign-off ($5M-$25M tier)" },
+      { name: "Confidence", status: "pass", detail: "91% above 85% threshold" }
+    ],
+    decision: "escalated",
+    decisionText: "ESCALATED — Awaiting Treasury Manager approval",
+    reason: "Trade amount ($10M) exceeds auto-approval limit ($5M). All other checks pass."
+  },
+  {
+    query: "Sweep $40M from liquid assets into a 3-year corporate bond for maximum yield",
+    analysis: {
+      proposed: "Reallocate $40,000,000 from Chase Overnight → 3-Year Corporate Bond Fund",
+      yield: "+2.1% yield improvement ($840,000 annualized)",
+      duration: "Portfolio duration: 1.80y → 2.72y",
+      confidence: "68%"
+    },
+    checks: [
+      { name: "Liquidity", status: "fail", detail: "Overnight balance $62M → $22M — BELOW $50M minimum. Buffer: $-13M (required: $50M)" },
+      { name: "Duration", status: "fail", detail: "Post-trade duration 2.72y EXCEEDS 2.5y limit" },
+      { name: "Concentration", status: "fail", detail: "Corporate bonds at 28% — single issuer EXCEEDS 15% limit" },
+      { name: "Government Min", status: "pass", detail: "Government allocation 34.9% (above 30% floor)" },
+      { name: "Approval Tier", status: "warn", detail: "Trade $40M requires CFO approval (>$25M tier)" },
+      { name: "Confidence", status: "warn", detail: "68% — between 60-85%, escalation required" }
+    ],
+    decision: "blocked",
+    decisionText: "BLOCKED — Multiple policy violations detected",
+    reason: "3 policy violations: liquidity breach, duration limit exceeded, concentration limit exceeded."
+  },
+  {
+    query: "Move $50M out of government securities into high-yield emerging market bonds",
+    analysis: {
+      proposed: "Reallocate $50,000,000 from US T-Bills → Emerging Market High-Yield Fund",
+      yield: "+4.2% yield improvement ($2,100,000 annualized)",
+      duration: "Portfolio duration: 1.80y → 3.40y",
+      confidence: "42%"
+    },
+    checks: [
+      { name: "Liquidity", status: "pass", detail: "Liquid assets remain at $55M (above $50M minimum)" },
+      { name: "Duration", status: "fail", detail: "Post-trade duration 3.40y FAR EXCEEDS 2.5y limit" },
+      { name: "Concentration", status: "fail", detail: "EM High-Yield at 23.3% — EXCEEDS 15% single issuer limit" },
+      { name: "Government Min", status: "fail", detail: "Government allocation drops to 11.6% — BELOW 30% minimum" },
+      { name: "Approval Tier", status: "warn", detail: "Trade $50M requires CFO approval (>$25M tier)" },
+      { name: "Confidence", status: "fail", detail: "42% BELOW 60% minimum — trade blocked due to insufficient confidence" }
+    ],
+    decision: "blocked",
+    decisionText: "BLOCKED — Critical policy violations. Manual override with justification required.",
+    reason: "4 policy violations: duration breach, concentration limit, government minimum violated, confidence too low. This trade cannot proceed."
+  }
+];
+
+function runScenario(idx) {
+  document.querySelectorAll('.scenario-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+  const s = scenarios[idx];
+  const out = document.getElementById('output');
+  out.innerHTML = '';
+  let delay = 0;
+  const addLine = (html, extraDelay = 0) => {
+    delay += 80 + extraDelay;
+    setTimeout(() => {
+      const div = document.createElement('div');
+      div.className = 'line visible';
+      div.innerHTML = html;
+      out.appendChild(div);
+      out.scrollTop = out.scrollHeight;
+    }, delay);
+  };
+
+  addLine(`<span class="prompt">You:</span> ${s.query}`);
+  addLine('', 200);
+  addLine('<div class="section-header">━━━ AI ANALYSIS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>', 400);
+  addLine(`Proposed: ${s.analysis.proposed}`);
+  addLine(`Expected yield improvement: ${s.analysis.yield}`);
+  addLine(`Duration impact: ${s.analysis.duration}`);
+  addLine(`Confidence: ${s.analysis.confidence}`);
+  addLine('', 200);
+  addLine('<div class="section-header">━━━ POLICY RUNTIME ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>', 300);
+
+  s.checks.forEach((c, i) => {
+    const icon = c.status === 'pass' ? '✅' : c.status === 'fail' ? '❌' : '⚠️';
+    const cls = c.status === 'pass' ? 'check-pass' : c.status === 'fail' ? 'check-fail' : 'check-warn';
+    addLine(`<span class="${cls}">${icon} ${c.name}:</span> ${c.detail}`, i * 50);
+  });
+
+  const dClass = s.decision === 'approved' ? 'decision-approved' : s.decision === 'blocked' ? 'decision-blocked' : 'decision-escalated';
+  addLine(`<div class="decision ${dClass}">${s.decisionText}</div>`, 200);
+  addLine(`<div style="color:#94a3b8;font-size:0.8em;margin-top:4px;">Reason: ${s.reason}</div>`);
+
+  const now = new Date().toISOString().replace('T', ' ').substring(0, 19) + 'Z';
+  addLine(`<div class="audit">
+    <div class="audit-entry">[${now}] Action proposed: ${s.analysis.proposed.split('→')[0].trim()}</div>
+    <div class="audit-entry">[${now}] Policy evaluation: ${s.checks.filter(c=>c.status==='pass').length}/${s.checks.length} PASS, ${s.checks.filter(c=>c.status==='fail').length} FAIL, ${s.checks.filter(c=>c.status==='warn').length} ESCALATE</div>
+    <div class="audit-entry">[${now}] Decision: ${s.decisionText.split('—')[0].trim()}</div>
+    <div class="audit-entry">[${now}] Audit log entry written. Immutable record preserved.</div>
+  </div>`, 200);
+}
+
+// Run first scenario on load
+runScenario(0);
+</script>
+</body>
+</html>
