@@ -1,0 +1,31 @@
+{
+  "as_of": "2026-05-12T09:30:00Z",
+  "fed_funds_rate": 0.0450,
+  "rates": {
+    "overnight": 0.0448,
+    "1_month": 0.0495,
+    "3_month": 0.0520,
+    "6_month": 0.0540,
+    "1_year": 0.0510,
+    "2_year": 0.0480,
+    "5_year": 0.0440,
+    "10_year": 0.0420,
+    "30_year": 0.0435
+  },
+  "credit_spreads": {
+    "AAA": 0.0020,
+    "AA": 0.0045,
+    "A": 0.0080,
+    "BBB": 0.0135,
+    "BB": 0.0280,
+    "B": 0.0420
+  },
+  "yield_curve_slope": "inverted",
+  "market_commentary": "Yield curve remains inverted. Short-term rates elevated due to Fed policy. Market pricing in rate cuts beginning Q3 2026. Credit spreads tightening modestly.",
+  "volatility_index": 18.5,
+  "economic_indicators": {
+    "gdp_growth": 0.021,
+    "inflation_cpi": 0.028,
+    "unemployment": 0.039
+  }
+}

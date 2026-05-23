@@ -1,0 +1,16 @@
+{
+  "cash_positions": [
+    {"account": "Chase Overnight", "type": "overnight_deposit", "balance": 62000000, "yield": 0.045},
+    {"account": "BofA Savings", "type": "savings", "balance": 28000000, "yield": 0.042},
+    {"account": "Operating", "type": "checking", "balance": 15000000, "yield": 0.01}
+  ],
+  "holdings": [
+    {"instrument": "US 3-Month T-Bills", "type": "government", "amount": 45000000, "yield": 0.052, "duration_years": 0.25},
+    {"instrument": "US 6-Month T-Bills", "type": "government", "amount": 30000000, "yield": 0.054, "duration_years": 0.5},
+    {"instrument": "Corporate Bond Fund A", "type": "corporate", "amount": 20000000, "yield": 0.062, "duration_years": 2.1},
+    {"instrument": "Municipal Bond Fund", "type": "municipal", "amount": 15000000, "yield": 0.048, "duration_years": 1.8}
+  ],
+  "next_day_obligations": 35000000,
+  "total_portfolio_value": 215000000,
+  "portfolio_duration_years": 1.8
+}

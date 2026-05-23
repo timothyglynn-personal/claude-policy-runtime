@@ -1,0 +1,94 @@
+{
+  "available_instruments": [
+    {
+      "name": "US 3-Month T-Bills",
+      "type": "government",
+      "current_yield": 0.052,
+      "duration_years": 0.25,
+      "risk_rating": "AAA",
+      "min_investment": 1000000,
+      "liquidity": "high"
+    },
+    {
+      "name": "US 6-Month T-Bills",
+      "type": "government",
+      "current_yield": 0.054,
+      "duration_years": 0.5,
+      "risk_rating": "AAA",
+      "min_investment": 1000000,
+      "liquidity": "high"
+    },
+    {
+      "name": "US 2-Year Treasury Notes",
+      "type": "government",
+      "current_yield": 0.048,
+      "duration_years": 1.9,
+      "risk_rating": "AAA",
+      "min_investment": 1000000,
+      "liquidity": "high"
+    },
+    {
+      "name": "US 5-Year Treasury Notes",
+      "type": "government",
+      "current_yield": 0.044,
+      "duration_years": 4.5,
+      "risk_rating": "AAA",
+      "min_investment": 1000000,
+      "liquidity": "medium"
+    },
+    {
+      "name": "Corporate Bond Fund A",
+      "type": "corporate",
+      "current_yield": 0.062,
+      "duration_years": 2.1,
+      "risk_rating": "A",
+      "min_investment": 5000000,
+      "liquidity": "medium"
+    },
+    {
+      "name": "Corporate Bond Fund B",
+      "type": "corporate",
+      "current_yield": 0.071,
+      "duration_years": 3.5,
+      "risk_rating": "BBB+",
+      "min_investment": 5000000,
+      "liquidity": "medium"
+    },
+    {
+      "name": "High-Yield Corporate Fund",
+      "type": "corporate",
+      "current_yield": 0.085,
+      "duration_years": 4.2,
+      "risk_rating": "BB",
+      "min_investment": 10000000,
+      "liquidity": "low"
+    },
+    {
+      "name": "Municipal Bond Fund",
+      "type": "municipal",
+      "current_yield": 0.048,
+      "duration_years": 1.8,
+      "risk_rating": "AA",
+      "min_investment": 5000000,
+      "liquidity": "medium"
+    },
+    {
+      "name": "Money Market Fund",
+      "type": "money_market",
+      "current_yield": 0.049,
+      "duration_years": 0.08,
+      "risk_rating": "AAA",
+      "min_investment": 1000000,
+      "liquidity": "high"
+    },
+    {
+      "name": "Agency MBS Fund",
+      "type": "government_agency",
+      "current_yield": 0.056,
+      "duration_years": 2.8,
+      "risk_rating": "AA+",
+      "min_investment": 5000000,
+      "liquidity": "medium"
+    }
+  ]
+}
