@@ -3,217 +3,673 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Claude Policy Runtime — AI Treasury Analyst Demo</title>
+<title>CPR — AI Treasury Analyst</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: #0a0e1a; color: #e2e8f0; font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace; min-height: 100vh; padding: 20px; }
-.container { max-width: 900px; margin: 0 auto; }
-.header { text-align: center; padding: 40px 20px; border: 1px solid #1e293b; border-radius: 12px; margin-bottom: 30px; background: linear-gradient(135deg, #0f172a, #1e1b4b); }
-.header h1 { font-size: 1.8em; color: #a78bfa; margin-bottom: 8px; }
-.header .subtitle { color: #64748b; font-size: 0.85em; }
-.header .thesis { color: #f59e0b; font-size: 0.9em; margin-top: 16px; font-style: italic; }
-.scenario-buttons { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 30px; }
-.scenario-btn { padding: 10px 18px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; cursor: pointer; font-size: 0.8em; font-family: inherit; transition: all 0.2s; }
-.scenario-btn:hover { border-color: #a78bfa; background: #2d2055; }
-.scenario-btn.active { border-color: #a78bfa; background: #3b2d6b; color: #a78bfa; }
-.terminal { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; overflow: hidden; }
+:root {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --border: #e5e7eb;
+  --border-hover: #d1d5db;
+  --text: #111827;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --accent: #6d28d9;
+  --accent-light: #ede9fe;
+  --accent-hover: #5b21b6;
+  --green: #059669;
+  --green-bg: #ecfdf5;
+  --green-border: #a7f3d0;
+  --amber: #d97706;
+  --amber-bg: #fffbeb;
+  --amber-border: #fde68a;
+  --red: #dc2626;
+  --red-bg: #fef2f2;
+  --red-border: #fecaca;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+}
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; min-height: 100vh; font-size: 14px; line-height: 1.5; }
+button { font-family: inherit; cursor: pointer; }
+
+/* Layout */
+.app { max-width: 1120px; margin: 0 auto; padding: 24px 24px 48px; }
+.app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.app-logo { display: flex; align-items: center; gap: 10px; }
+.app-logo-icon { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; }
+.app-logo-text { font-size: 15px; font-weight: 600; color: var(--text); }
+.app-logo-badge { font-size: 11px; color: var(--text-tertiary); font-weight: 400; margin-left: 4px; }
+
+/* Tabs */
+.tabs { display: flex; gap: 2px; background: var(--border); border-radius: 10px; padding: 3px; margin-bottom: 28px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.tab { flex: 1; padding: 9px 12px; border: none; background: transparent; border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--text-secondary); transition: all 0.15s ease; white-space: nowrap; min-width: 0; }
+.tab:hover { color: var(--text); }
+.tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+@media (max-width: 520px) {
+  .tabs { gap: 1px; padding: 2px; border-radius: 8px; }
+  .tab { flex: none; padding: 8px 10px; font-size: 12px; }
+}
+
+/* Panels */
+.panel { display: none; animation: fadeIn 0.2s ease; }
+.panel.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Dashboard */
+.chat-container { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 24px; box-shadow: var(--shadow-sm); }
+.chat-label { font-size: 12px; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+.chat-input-row { display: flex; gap: 10px; }
+.chat-input { flex: 1; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; color: var(--text); outline: none; transition: border-color 0.15s; }
+.chat-input:focus { border-color: var(--accent); }
+.chat-input::placeholder { color: var(--text-tertiary); }
+.chat-send { padding: 12px 20px; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; transition: background 0.15s; }
+.chat-send:hover { background: var(--accent-hover); }
+.chat-response { margin-top: 16px; padding: 14px 16px; background: var(--accent-light); border-radius: var(--radius-sm); font-size: 13px; color: var(--text); line-height: 1.6; display: none; white-space: pre-line; }
+.chat-table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 12px; white-space: nowrap; }
+.chat-table th { text-align: left; padding: 6px 12px; border-bottom: 2px solid var(--border); color: var(--text-secondary); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }
+.chat-table td { padding: 6px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+.chat-table tr:last-child td { border-bottom: none; }
+.status-pass { color: var(--green); font-weight: 500; }
+.status-fail { color: var(--red); font-weight: 500; }
+
+.suggested-actions { margin-bottom: 24px; }
+.section-title { font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+.action-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.action-chip { padding: 8px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; font-size: 13px; color: var(--text-secondary); transition: all 0.15s; cursor: pointer; }
+.action-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+.columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 700px) { .columns { grid-template-columns: 1fr; } }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow-sm); }
+.card-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.card-title-dot { width: 8px; height: 8px; border-radius: 50%; }
+.card-title-dot.amber { background: var(--amber); }
+.card-title-dot.green { background: var(--green); }
+.task-list { list-style: none; }
+.task-item { padding: 10px 0; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 10px; font-size: 13px; }
+.task-item:last-child { border-bottom: none; padding-bottom: 0; }
+.task-status { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; margin-top: 1px; font-size: 10px; }
+.task-status.pending { border-color: var(--amber); color: var(--amber); }
+.task-status.done { border-color: var(--green); background: var(--green); color: white; }
+.task-content { flex: 1; }
+.task-label { color: var(--text); }
+.task-meta { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.task-actions { display: flex; gap: 6px; }
+.task-btn { padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); font-size: 11px; color: var(--text-secondary); transition: all 0.15s; }
+.task-btn.approve { border-color: var(--green-border); color: var(--green); }
+.task-btn.approve:hover { background: var(--green-bg); }
+.task-btn.reject { border-color: var(--red-border); color: var(--red); }
+.task-btn.reject:hover { background: var(--red-bg); }
+
+/* Policy page */
+.policy-page { max-width: 680px; }
+.policy-description { color: var(--text-secondary); font-size: 13px; margin-bottom: 20px; line-height: 1.6; }
+.policy-editor { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+.policy-editor-header { padding: 12px 16px; background: #f9fafb; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.policy-editor-title { font-size: 13px; font-weight: 500; color: var(--text); }
+.policy-editor-status { font-size: 11px; color: var(--green); font-weight: 500; }
+.policy-textarea { width: 100%; min-height: 280px; padding: 16px; border: none; font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace; font-size: 13px; line-height: 1.7; color: var(--text); resize: vertical; outline: none; }
+.policy-footer { display: flex; gap: 10px; margin-top: 16px; }
+.btn { padding: 10px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; border: none; transition: all 0.15s; }
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-secondary { background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--border-hover); color: var(--text); }
+.policy-saved-msg { display: none; align-items: center; gap: 6px; font-size: 13px; color: var(--green); font-weight: 500; margin-left: 12px; }
+
+/* Automation page */
+.automation-page { max-width: 720px; }
+.rule-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+.rule-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow-sm); transition: border-color 0.15s; }
+.rule-card:hover { border-color: var(--border-hover); }
+.rule-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.rule-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.toggle { position: relative; width: 36px; height: 20px; background: var(--border); border-radius: 10px; cursor: pointer; transition: background 0.2s; }
+.toggle.active { background: var(--accent); }
+.toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: transform 0.2s; box-shadow: var(--shadow-sm); }
+.toggle.active::after { transform: translateX(16px); }
+.rule-body { display: flex; flex-direction: column; gap: 8px; }
+.rule-row { display: flex; align-items: center; gap: 8px; }
+.rule-keyword { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 8px; border-radius: 4px; flex-shrink: 0; }
+.rule-keyword.if { background: #ede9fe; color: var(--accent); }
+.rule-keyword.then { background: var(--green-bg); color: var(--green); }
+.rule-keyword.and { background: #f3f4f6; color: var(--text-secondary); }
+.rule-input { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; color: var(--text); outline: none; transition: border-color 0.15s; }
+.rule-input:focus { border-color: var(--accent); }
+.add-rule-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; border: 2px dashed var(--border); border-radius: var(--radius); background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 500; transition: all 0.15s; width: 100%; }
+.add-rule-btn:hover { border-color: var(--accent); color: var(--accent); }
+.rule-remove { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border: none; background: transparent; color: var(--text-tertiary); border-radius: 4px; font-size: 16px; transition: all 0.15s; flex-shrink: 0; }
+.rule-remove:hover { background: var(--red-bg); color: var(--red); }
+
+/* Examples page */
+.examples-page { }
+.scenario-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+@media (max-width: 700px) { .scenario-grid { grid-template-columns: 1fr; } }
+.scenario-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; cursor: pointer; transition: all 0.15s; box-shadow: var(--shadow-sm); }
+.scenario-card:hover { border-color: var(--accent); box-shadow: var(--shadow); }
+.scenario-card.active { border-color: var(--accent); background: var(--accent-light); }
+.scenario-card-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.scenario-card-desc { font-size: 12px; color: var(--text-tertiary); }
+.terminal { background: #0f172a; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-lg); }
 .terminal-header { background: #1e293b; padding: 10px 16px; display: flex; align-items: center; gap: 8px; }
-.dot { width: 12px; height: 12px; border-radius: 50%; }
+.dot { width: 10px; height: 10px; border-radius: 50%; }
 .dot-red { background: #ef4444; }
 .dot-yellow { background: #f59e0b; }
 .dot-green { background: #22c55e; }
-.terminal-title { margin-left: 12px; color: #64748b; font-size: 0.75em; }
-.terminal-body { padding: 24px; min-height: 500px; }
-.line { margin-bottom: 6px; opacity: 0; animation: fadeIn 0.3s ease forwards; }
-.line.visible { opacity: 1; }
-.prompt { color: #22c55e; }
-.section-header { color: #f59e0b; font-weight: bold; margin-top: 16px; margin-bottom: 8px; font-size: 0.9em; }
-.check-pass { color: #22c55e; }
-.check-fail { color: #ef4444; }
-.check-warn { color: #f59e0b; }
-.decision { margin-top: 16px; padding: 12px 16px; border-radius: 8px; font-weight: bold; font-size: 0.95em; }
-.decision-approved { background: #052e16; border: 1px solid #22c55e; color: #22c55e; }
-.decision-blocked { background: #2d0f0f; border: 1px solid #ef4444; color: #ef4444; }
-.decision-escalated { background: #2d1f00; border: 1px solid #f59e0b; color: #f59e0b; }
-.audit { margin-top: 16px; padding: 12px; background: #0c1222; border: 1px solid #1e293b; border-radius: 6px; font-size: 0.75em; color: #64748b; }
-.audit-entry { margin-bottom: 4px; }
-.info-panel { margin-top: 30px; padding: 20px; background: #1e1b4b; border: 1px solid #3730a3; border-radius: 12px; }
-.info-panel h3 { color: #a78bfa; margin-bottom: 12px; font-size: 0.9em; }
-.info-panel p { color: #94a3b8; font-size: 0.8em; line-height: 1.6; margin-bottom: 8px; }
-.info-panel a { color: #a78bfa; }
-.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; margin-left: 8px; }
-.badge-data { background: #1e3a5f; color: #60a5fa; }
-.badge-action { background: #3b1f1f; color: #f87171; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-@media (max-width: 600px) { body { padding: 10px; } .header h1 { font-size: 1.3em; } .scenario-buttons { flex-direction: column; } }
+.terminal-title { margin-left: 10px; color: #64748b; font-size: 12px; font-family: 'SF Mono', monospace; }
+.terminal-body { padding: 20px; min-height: 320px; font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace; font-size: 12px; line-height: 1.7; color: #e2e8f0; }
+.t-prompt { color: #a78bfa; }
+.t-section { color: #f59e0b; font-weight: 600; margin-top: 14px; display: block; }
+.t-pass { color: #34d399; }
+.t-fail { color: #f87171; }
+.t-warn { color: #fbbf24; }
+.t-muted { color: #64748b; }
+.t-decision { margin-top: 14px; padding: 10px 14px; border-radius: 6px; font-weight: 600; display: inline-block; }
+.t-decision.approved { background: #052e16; border: 1px solid #22c55e; color: #34d399; }
+.t-decision.blocked { background: #2d0f0f; border: 1px solid #ef4444; color: #f87171; }
+.t-decision.escalated { background: #2d1f00; border: 1px solid #f59e0b; color: #fbbf24; }
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <h1>Claude Policy Runtime (CPR)</h1>
-    <div class="subtitle">AI Treasury Analyst with Policy Governance</div>
-    <div class="thesis">"The bottleneck to enterprise AI agents is not intelligence — it is delegated authority."</div>
-  </div>
-
-  <div class="scenario-buttons">
-    <button class="scenario-btn active" onclick="runScenario(0)">✅ Auto-Approved ($2M)</button>
-    <button class="scenario-btn" onclick="runScenario(1)">⚠️ Escalated ($10M)</button>
-    <button class="scenario-btn" onclick="runScenario(2)">❌ Blocked (Violations)</button>
-    <button class="scenario-btn" onclick="runScenario(3)">❌ Multi-Violation ($50M)</button>
-  </div>
-
-  <div class="terminal">
-    <div class="terminal-header">
-      <div class="dot dot-red"></div>
-      <div class="dot dot-yellow"></div>
-      <div class="dot dot-green"></div>
-      <span class="terminal-title">claude-policy-runtime — python3 run.py</span>
+<div class="app">
+  <div class="app-header">
+    <div class="app-logo">
+      <div class="app-logo-icon">C</div>
+      <span class="app-logo-text">Claude Policy Runtime<span class="app-logo-badge">Treasury</span></span>
     </div>
-    <div class="terminal-body" id="output"></div>
+    <a href="https://github.com/timothyglynn-personal/claude-policy-runtime" target="_blank" style="font-size:12px;color:var(--text-tertiary);text-decoration:none;display:flex;align-items:center;gap:5px;">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      Source &amp; PRD
+    </a>
   </div>
 
-  <div class="info-panel">
-    <h3>How This Works</h3>
-    <p><strong>Data Layer</strong> <span class="badge badge-data">READ</span> — Claude queries treasury balances and market data (like Uber's Finch agent).</p>
-    <p><strong>Action Layer</strong> <span class="badge badge-action">WRITE</span> — When Claude proposes a trade, the Policy Runtime evaluates it against human-readable rules and returns APPROVED / BLOCKED / ESCALATED.</p>
-    <p><strong>Policies are markdown files.</strong> Non-engineers can edit rules in plain English. No code changes needed. This is "Decagon-style" agent operating principles for financial operations.</p>
-    <p style="margin-top:12px;"><a href="https://github.com/timothyglynn-personal/claude-policy-runtime" target="_blank">View source on GitHub →</a></p>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab(0)">Dashboard</button>
+    <button class="tab" onclick="switchTab(1)">Policies</button>
+    <button class="tab" onclick="switchTab(2)">Automations</button>
+    <button class="tab" onclick="switchTab(3)">Activity log</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="panel active" id="panel-0">
+    <div class="chat-container">
+      <div class="chat-label">Ask your treasury analyst</div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-input" type="text" placeholder="Ask a question or request an action..." />
+        <button class="chat-send" onclick="handleChat()">Send</button>
+      </div>
+      <div class="chat-response" id="chat-response"></div>
+    </div>
+
+    <div class="suggested-actions">
+      <div class="section-title">Suggested actions</div>
+      <div class="action-chips">
+        <span class="action-chip" onclick="suggestAction(this)">What's my cash balance?</span>
+        <span class="action-chip" onclick="suggestAction(this)">Show portfolio summary</span>
+        <span class="action-chip" onclick="suggestAction(this)">Current market rates</span>
+        <span class="action-chip" onclick="suggestAction(this)">Optimize idle cash yield</span>
+        <span class="action-chip" onclick="suggestAction(this)">Review maturing positions</span>
+        <span class="action-chip" onclick="suggestAction(this)">Sweep overnight surplus</span>
+      </div>
+    </div>
+
+    <div class="columns">
+      <div class="card">
+        <div class="card-title"><span class="card-title-dot amber"></span>Actions for approval</div>
+        <ul class="task-list">
+          <li class="task-item">
+            <div class="task-status pending">!</div>
+            <div class="task-content">
+              <div class="task-label">Transfer $8M from overnight deposits to 6-month T-Bills</div>
+              <div class="task-meta">Yield +0.9% | Proposed 2 min ago</div>
+            </div>
+            <div class="task-actions">
+              <button class="task-btn approve" onclick="approveTask(this)">Approve</button>
+              <button class="task-btn reject" onclick="rejectTask(this)">Reject</button>
+            </div>
+          </li>
+          <li class="task-item">
+            <div class="task-status pending">!</div>
+            <div class="task-content">
+              <div class="task-label">Reallocate $12M corporate bond position (concentration warning)</div>
+              <div class="task-meta">Risk reduction | Proposed 18 min ago</div>
+            </div>
+            <div class="task-actions">
+              <button class="task-btn approve" onclick="approveTask(this)">Approve</button>
+              <button class="task-btn reject" onclick="rejectTask(this)">Reject</button>
+            </div>
+          </li>
+          <li class="task-item">
+            <div class="task-status pending">!</div>
+            <div class="task-content">
+              <div class="task-label">Hedge GBP receivables due July 15 ($4.2M notional)</div>
+              <div class="task-meta">FX risk | Proposed 1 hr ago</div>
+            </div>
+            <div class="task-actions">
+              <button class="task-btn approve" onclick="approveTask(this)">Approve</button>
+              <button class="task-btn reject" onclick="rejectTask(this)">Reject</button>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="card-title-dot green"></span>Recently completed auto-actions</div>
+        <ul class="task-list">
+          <li class="task-item">
+            <div class="task-status done">&#10003;</div>
+            <div class="task-content">
+              <div class="task-label">Swept $2.4M overnight surplus to money market fund</div>
+              <div class="task-meta">Auto-approved | 12 min ago</div>
+            </div>
+          </li>
+          <li class="task-item">
+            <div class="task-status done">&#10003;</div>
+            <div class="task-content">
+              <div class="task-label">Transferred $5M USD to EUR account (balance rule triggered)</div>
+              <div class="task-meta">Auto-approved | 1 hr ago</div>
+            </div>
+          </li>
+          <li class="task-item">
+            <div class="task-status done">&#10003;</div>
+            <div class="task-content">
+              <div class="task-label">Rolled $10M maturing T-Bill into new 3-month issue</div>
+              <div class="task-meta">Auto-approved | 3 hrs ago</div>
+            </div>
+          </li>
+          <li class="task-item">
+            <div class="task-status done">&#10003;</div>
+            <div class="task-content">
+              <div class="task-label">Rebalanced government allocation to maintain 30% floor</div>
+              <div class="task-meta">Auto-approved | 5 hrs ago</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- POLICIES -->
+  <div class="panel" id="panel-1">
+    <div class="policy-page">
+      <div class="section-title">Policy governance</div>
+      <p class="policy-description">Policies are plain-language rules that govern every action the AI analyst takes. Edit them like a document — changes take effect immediately with no code deploy.</p>
+      <div class="policy-editor">
+        <div class="policy-editor-header">
+          <span class="policy-editor-title">treasury_policy.md</span>
+          <span class="policy-editor-status">Active</span>
+        </div>
+        <textarea class="policy-textarea" id="policy-text"># Treasury Investment Policy
+
+## Liquidity requirements
+- Maintain minimum $50M in overnight liquid deposits at all times
+- No single transaction may reduce liquid reserves below this floor
+- Buffer of $5M above minimum before auto-approval is permitted
+
+## Concentration limits
+- Maximum 15% of total portfolio in any single issuer
+- Maximum 40% in any single asset class (excluding government securities)
+- No single counterparty exposure above $25M
+
+## Duration constraints
+- Portfolio weighted average duration must not exceed 2.5 years
+- No individual position with maturity beyond 5 years without CFO approval
+
+## Government allocation
+- Minimum 30% of total portfolio must be in government securities
+- Government securities are exempt from concentration limits
+
+## Approval thresholds
+- Below $5M: Auto-approval if all policy checks pass
+- $5M to $25M: Requires Treasury Manager sign-off
+- Above $25M: Requires CFO approval
+- Any trade with confidence below 85%: Escalate to human review
+
+## Confidence requirements
+- Minimum 60% model confidence to propose any trade
+- Minimum 85% confidence for auto-execution
+- Between 60-85%: Propose with escalation flag</textarea>
+      </div>
+      <div class="policy-footer">
+        <button class="btn btn-primary" onclick="savePolicy()">Save policy</button>
+        <button class="btn btn-secondary" onclick="resetPolicy()">Reset to default</button>
+        <span class="policy-saved-msg" id="policy-saved">&#10003; Policy saved and active</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTOMATIONS -->
+  <div class="panel" id="panel-2">
+    <div class="automation-page">
+      <div class="section-title">Cash flow automations</div>
+      <p class="policy-description">Define rules that the AI analyst executes automatically when conditions are met. All automations are subject to policy checks before execution.</p>
+      <div class="rule-list" id="rule-list">
+        <div class="rule-card">
+          <div class="rule-header">
+            <span class="rule-name">EUR liquidity maintenance</span>
+            <div class="toggle active" onclick="this.classList.toggle('active')"></div>
+          </div>
+          <div class="rule-body">
+            <div class="rule-row">
+              <span class="rule-keyword if">If</span>
+              <input class="rule-input" value="Balance in EUR account falls below $2M" />
+            </div>
+            <div class="rule-row">
+              <span class="rule-keyword then">Then</span>
+              <input class="rule-input" value="Transfer $5M from USD operating account to EUR account" />
+            </div>
+          </div>
+        </div>
+        <div class="rule-card">
+          <div class="rule-header">
+            <span class="rule-name">Overnight sweep</span>
+            <div class="toggle active" onclick="this.classList.toggle('active')"></div>
+          </div>
+          <div class="rule-body">
+            <div class="rule-row">
+              <span class="rule-keyword if">If</span>
+              <input class="rule-input" value="Overnight deposit balance exceeds $65M at end of day" />
+            </div>
+            <div class="rule-row">
+              <span class="rule-keyword then">Then</span>
+              <input class="rule-input" value="Sweep excess above $60M into highest-yield money market fund" />
+            </div>
+          </div>
+        </div>
+        <div class="rule-card">
+          <div class="rule-header">
+            <span class="rule-name">T-Bill rollover</span>
+            <div class="toggle active" onclick="this.classList.toggle('active')"></div>
+          </div>
+          <div class="rule-body">
+            <div class="rule-row">
+              <span class="rule-keyword if">If</span>
+              <input class="rule-input" value="T-Bill position matures within 5 business days" />
+            </div>
+            <div class="rule-row">
+              <span class="rule-keyword and">And</span>
+              <input class="rule-input" value="Current T-Bill yield spread vs overnight is > 0.5%" />
+            </div>
+            <div class="rule-row">
+              <span class="rule-keyword then">Then</span>
+              <input class="rule-input" value="Reinvest full maturity amount into new 3-month T-Bill" />
+            </div>
+          </div>
+        </div>
+        <div class="rule-card">
+          <div class="rule-header">
+            <span class="rule-name">Concentration rebalance</span>
+            <div class="toggle" onclick="this.classList.toggle('active')"></div>
+          </div>
+          <div class="rule-body">
+            <div class="rule-row">
+              <span class="rule-keyword if">If</span>
+              <input class="rule-input" value="Any single issuer exceeds 12% of portfolio" />
+            </div>
+            <div class="rule-row">
+              <span class="rule-keyword then">Then</span>
+              <input class="rule-input" value="Propose rebalancing trades to bring back below 10%" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="add-rule-btn" onclick="addRule()">+ Add automation rule</button>
+    </div>
+  </div>
+
+  <!-- ACTIVITY LOG (Examples) -->
+  <div class="panel" id="panel-3">
+    <div class="examples-page">
+      <div class="section-title">Recent policy evaluations</div>
+      <p class="policy-description" style="margin-bottom:20px;">Every action the AI proposes is evaluated against your policies in real time. Select an entry to see the full evaluation trace.</p>
+      <div class="scenario-grid">
+        <div class="scenario-card active" onclick="runScenario(0)">
+          <div class="scenario-card-title" style="color:var(--green);">Approved — $2M T-Bill purchase</div>
+          <div class="scenario-card-desc">All 6 policy checks passed. Auto-executed.</div>
+        </div>
+        <div class="scenario-card" onclick="runScenario(1)">
+          <div class="scenario-card-title" style="color:var(--amber);">Escalated — $10M reallocation</div>
+          <div class="scenario-card-desc">Exceeds auto-approval threshold. Awaiting sign-off.</div>
+        </div>
+        <div class="scenario-card" onclick="runScenario(2)">
+          <div class="scenario-card-title" style="color:var(--red);">Blocked — $40M corporate bond</div>
+          <div class="scenario-card-desc">3 violations: liquidity, duration, concentration.</div>
+        </div>
+        <div class="scenario-card" onclick="runScenario(3)">
+          <div class="scenario-card-title" style="color:var(--red);">Blocked — $50M EM high-yield</div>
+          <div class="scenario-card-desc">4 critical violations. Manual override required.</div>
+        </div>
+      </div>
+      <div class="terminal">
+        <div class="terminal-header">
+          <div class="dot dot-red"></div>
+          <div class="dot dot-yellow"></div>
+          <div class="dot dot-green"></div>
+          <span class="terminal-title">policy-runtime evaluation trace</span>
+        </div>
+        <div class="terminal-body" id="terminal-output"></div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
-const scenarios = [
-  {
-    query: "Move $2M from overnight deposits into 3-month T-bills to improve yield",
-    analysis: {
-      proposed: "Reallocate $2,000,000 from Chase Overnight Deposits → US 3-Month T-Bills",
-      yield: "+0.7% yield improvement ($14,000 annualized)",
-      duration: "Portfolio duration: 1.80y → 1.80y (unchanged)",
-      confidence: "92%"
-    },
-    checks: [
-      { name: "Liquidity", status: "pass", detail: "Overnight balance $62M → $60M (above $50M minimum)" },
-      { name: "Duration", status: "pass", detail: "1.80y within 2.5y limit" },
-      { name: "Concentration", status: "pass", detail: "T-Bills at 22% (below 40% max)" },
-      { name: "Government Min", status: "pass", detail: "Government allocation 36.3% (above 30% floor)" },
-      { name: "Approval Tier", status: "pass", detail: "Trade $2M < $5M threshold — auto-approval eligible" },
-      { name: "Confidence", status: "pass", detail: "92% above 85% threshold — auto-execution eligible" }
-    ],
-    decision: "approved",
-    decisionText: "APPROVED — Trade auto-executed",
-    reason: "All policy checks passed. Amount within auto-approval limit."
-  },
-  {
-    query: "Can we move $10M from overnight deposits into 6-month T-bills for better yield?",
-    analysis: {
-      proposed: "Reallocate $10,000,000 from Chase Overnight Deposits → US 6-Month T-Bills",
-      yield: "+1.2% yield improvement ($120,000 annualized)",
-      duration: "Portfolio duration: 1.80y → 1.82y",
-      confidence: "91%"
-    },
-    checks: [
-      { name: "Liquidity", status: "pass", detail: "Overnight balance $62M → $52M (above $50M minimum)" },
-      { name: "Duration", status: "pass", detail: "1.82y within 2.5y limit" },
-      { name: "Concentration", status: "pass", detail: "T-Bills at 28% (below 40% max)" },
-      { name: "Government Min", status: "pass", detail: "Government allocation 37.8% (above 30% floor)" },
-      { name: "Approval Tier", status: "warn", detail: "Trade $10M requires Treasury Manager sign-off ($5M-$25M tier)" },
-      { name: "Confidence", status: "pass", detail: "91% above 85% threshold" }
-    ],
-    decision: "escalated",
-    decisionText: "ESCALATED — Awaiting Treasury Manager approval",
-    reason: "Trade amount ($10M) exceeds auto-approval limit ($5M). All other checks pass."
-  },
-  {
-    query: "Sweep $40M from liquid assets into a 3-year corporate bond for maximum yield",
-    analysis: {
-      proposed: "Reallocate $40,000,000 from Chase Overnight → 3-Year Corporate Bond Fund",
-      yield: "+2.1% yield improvement ($840,000 annualized)",
-      duration: "Portfolio duration: 1.80y → 2.72y",
-      confidence: "68%"
-    },
-    checks: [
-      { name: "Liquidity", status: "fail", detail: "Overnight balance $62M → $22M — BELOW $50M minimum. Buffer: $-13M (required: $50M)" },
-      { name: "Duration", status: "fail", detail: "Post-trade duration 2.72y EXCEEDS 2.5y limit" },
-      { name: "Concentration", status: "fail", detail: "Corporate bonds at 28% — single issuer EXCEEDS 15% limit" },
-      { name: "Government Min", status: "pass", detail: "Government allocation 34.9% (above 30% floor)" },
-      { name: "Approval Tier", status: "warn", detail: "Trade $40M requires CFO approval (>$25M tier)" },
-      { name: "Confidence", status: "warn", detail: "68% — between 60-85%, escalation required" }
-    ],
-    decision: "blocked",
-    decisionText: "BLOCKED — Multiple policy violations detected",
-    reason: "3 policy violations: liquidity breach, duration limit exceeded, concentration limit exceeded."
-  },
-  {
-    query: "Move $50M out of government securities into high-yield emerging market bonds",
-    analysis: {
-      proposed: "Reallocate $50,000,000 from US T-Bills → Emerging Market High-Yield Fund",
-      yield: "+4.2% yield improvement ($2,100,000 annualized)",
-      duration: "Portfolio duration: 1.80y → 3.40y",
-      confidence: "42%"
-    },
-    checks: [
-      { name: "Liquidity", status: "pass", detail: "Liquid assets remain at $55M (above $50M minimum)" },
-      { name: "Duration", status: "fail", detail: "Post-trade duration 3.40y FAR EXCEEDS 2.5y limit" },
-      { name: "Concentration", status: "fail", detail: "EM High-Yield at 23.3% — EXCEEDS 15% single issuer limit" },
-      { name: "Government Min", status: "fail", detail: "Government allocation drops to 11.6% — BELOW 30% minimum" },
-      { name: "Approval Tier", status: "warn", detail: "Trade $50M requires CFO approval (>$25M tier)" },
-      { name: "Confidence", status: "fail", detail: "42% BELOW 60% minimum — trade blocked due to insufficient confidence" }
-    ],
-    decision: "blocked",
-    decisionText: "BLOCKED — Critical policy violations. Manual override with justification required.",
-    reason: "4 policy violations: duration breach, concentration limit, government minimum violated, confidence too low. This trade cannot proceed."
-  }
-];
-
-function runScenario(idx) {
-  document.querySelectorAll('.scenario-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
-  const s = scenarios[idx];
-  const out = document.getElementById('output');
-  out.innerHTML = '';
-  let delay = 0;
-  const addLine = (html, extraDelay = 0) => {
-    delay += 80 + extraDelay;
-    setTimeout(() => {
-      const div = document.createElement('div');
-      div.className = 'line visible';
-      div.innerHTML = html;
-      out.appendChild(div);
-      out.scrollTop = out.scrollHeight;
-    }, delay);
+document.addEventListener('DOMContentLoaded', function() {
+  // Tab switching
+  window.switchTab = function(idx) {
+    var tabs = document.querySelectorAll('.tab');
+    var panels = document.querySelectorAll('.panel');
+    for (var i = 0; i < tabs.length; i++) {
+      if (i === idx) { tabs[i].classList.add('active'); } else { tabs[i].classList.remove('active'); }
+    }
+    for (var i = 0; i < panels.length; i++) {
+      if (i === idx) { panels[i].classList.add('active'); } else { panels[i].classList.remove('active'); }
+    }
+    if (idx === 3) { runScenario(0); }
   };
 
-  addLine(`<span class="prompt">You:</span> ${s.query}`);
-  addLine('', 200);
-  addLine('<div class="section-header">━━━ AI ANALYSIS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>', 400);
-  addLine(`Proposed: ${s.analysis.proposed}`);
-  addLine(`Expected yield improvement: ${s.analysis.yield}`);
-  addLine(`Duration impact: ${s.analysis.duration}`);
-  addLine(`Confidence: ${s.analysis.confidence}`);
-  addLine('', 200);
-  addLine('<div class="section-header">━━━ POLICY RUNTIME ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>', 300);
+  // Chat
+  var chatResponses = {
+    optimize: 'I found $4.2M in overnight deposits earning 4.3% that could move to 6-month T-Bills at 5.1%. This would generate ~$33,600 in additional annual yield. The trade passes all policy checks and is within your auto-approval limit. Shall I execute?',
+    rebalance: 'Your EUR account is at $1.8M, below the $2M maintenance threshold. I recommend transferring $5M from the USD operating account. This matches your active automation rule and would auto-execute — but since you asked directly, I can process it now with your confirmation.',
+    review: 'You have 3 positions maturing in the next 10 days: $10M T-Bill (June 15), $5M CD (June 18), and $3M commercial paper (June 20). Based on current yields and your rollover automation, I recommend reinvesting the T-Bill and CD into new 3-month government issues. The commercial paper issuer credit spread has widened — I suggest redirecting to a higher-rated alternative.',
+    sweep: 'Current overnight balance is $67.2M, which is $7.2M above your $60M target. Your sweep automation would move the excess to the BlackRock Money Market Fund (current yield 5.28%). This is within policy limits and ready to execute.',
+    balance: 'Here\'s your current cash position across all accounts:\n\n<table class="chat-table"><tr><th>Account</th><th>Balance</th><th>Yield</th><th>Type</th></tr><tr><td>Chase Overnight Deposits</td><td>$62,000,000</td><td>4.30%</td><td>Liquid</td></tr><tr><td>BofA Savings</td><td>$18,500,000</td><td>4.20%</td><td>Liquid</td></tr><tr><td>US 3-Month T-Bills</td><td>$45,000,000</td><td>5.20%</td><td>Government</td></tr><tr><td>US 6-Month T-Bills</td><td>$32,000,000</td><td>5.40%</td><td>Government</td></tr><tr><td>Corporate Bond Fund A</td><td>$28,500,000</td><td>6.20%</td><td>Corporate</td></tr><tr><td>Money Market Fund</td><td>$15,000,000</td><td>5.28%</td><td>Liquid</td></tr><tr><td>EUR Operating Account</td><td>$1,800,000</td><td>3.10%</td><td>FX</td></tr><tr><td>GBP Receivables</td><td>$12,200,000</td><td>4.75%</td><td>FX</td></tr></table>\n\n<b>Total AUM:</b> $215,000,000 &nbsp;|&nbsp; <b>Weighted yield:</b> 4.92% &nbsp;|&nbsp; <b>Liquid reserves:</b> $95.5M (above $50M minimum)',
+    portfolio: 'Portfolio summary as of today:\n\n<table class="chat-table"><tr><th>Metric</th><th>Current</th><th>Policy limit</th><th>Status</th></tr><tr><td>Total AUM</td><td>$215M</td><td>—</td><td>—</td></tr><tr><td>Liquid reserves</td><td>$95.5M</td><td>$50M min</td><td class="status-pass">✓ Pass</td></tr><tr><td>Government allocation</td><td>35.8%</td><td>30% min</td><td class="status-pass">✓ Pass</td></tr><tr><td>Weighted duration</td><td>1.80y</td><td>2.5y max</td><td class="status-pass">✓ Pass</td></tr><tr><td>Largest single issuer</td><td>12.4%</td><td>15% max</td><td class="status-pass">✓ Pass</td></tr><tr><td>Weighted yield</td><td>4.92%</td><td>—</td><td>—</td></tr></table>\n\nAll policy constraints currently satisfied. No immediate action required.',
+    rates: 'Current market rates (as of today):\n\n<table class="chat-table"><tr><th>Instrument</th><th>Yield</th><th>Change (1w)</th></tr><tr><td>Fed Funds Rate</td><td>5.33%</td><td>—</td></tr><tr><td>3-Month T-Bill</td><td>5.20%</td><td>+0.02%</td></tr><tr><td>6-Month T-Bill</td><td>5.40%</td><td>+0.05%</td></tr><tr><td>2-Year Treasury</td><td>4.85%</td><td>-0.03%</td></tr><tr><td>IG Corporate (avg)</td><td>5.95%</td><td>+0.08%</td></tr><tr><td>HY Corporate (avg)</td><td>8.50%</td><td>+0.12%</td></tr><tr><td>Money Market (best)</td><td>5.28%</td><td>—</td></tr></table>\n\nShort-term rates remain elevated. The 3-6 month T-Bill curve is inverted — consider locking in 6-month yields before expected rate cuts.',
+    fallback: 'I can help with that. Based on your current portfolio ($215M AUM, 34% government securities, 1.8y weighted duration), I see a few opportunities. Would you like me to analyze yield optimization, review risk exposures, or check upcoming maturities?'
+  };
 
-  s.checks.forEach((c, i) => {
-    const icon = c.status === 'pass' ? '✅' : c.status === 'fail' ? '❌' : '⚠️';
-    const cls = c.status === 'pass' ? 'check-pass' : c.status === 'fail' ? 'check-fail' : 'check-warn';
-    addLine(`<span class="${cls}">${icon} ${c.name}:</span> ${c.detail}`, i * 50);
+  window.handleChat = function() {
+    var input = document.getElementById('chat-input');
+    var response = document.getElementById('chat-response');
+    var val = (input.value || '').toLowerCase().trim();
+    if (!val) return;
+    var reply = chatResponses.fallback;
+    if (val.indexOf('balance') !== -1 || val.indexOf('cash') !== -1 || val.indexOf('how much') !== -1 || val.indexOf('accounts') !== -1) reply = chatResponses.balance;
+    else if (val.indexOf('portfolio') !== -1 || val.indexOf('summary') !== -1 || val.indexOf('overview') !== -1 || val.indexOf('status') !== -1) reply = chatResponses.portfolio;
+    else if (val.indexOf('rate') !== -1 || val.indexOf('market') !== -1 || val.indexOf('yield') !== -1 && val.indexOf('optimize') === -1) reply = chatResponses.rates;
+    else if (val.indexOf('optimize') !== -1 || val.indexOf('idle') !== -1) reply = chatResponses.optimize;
+    else if (val.indexOf('eur') !== -1 || val.indexOf('rebalance') !== -1 || val.indexOf('exposure') !== -1) reply = chatResponses.rebalance;
+    else if (val.indexOf('matur') !== -1 || val.indexOf('review') !== -1 || val.indexOf('position') !== -1) reply = chatResponses.review;
+    else if (val.indexOf('sweep') !== -1 || val.indexOf('surplus') !== -1 || val.indexOf('overnight') !== -1) reply = chatResponses.sweep;
+    response.style.display = 'block';
+    response.innerHTML = reply;
+    input.value = '';
+  };
+
+  document.getElementById('chat-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { window.handleChat(); }
   });
 
-  const dClass = s.decision === 'approved' ? 'decision-approved' : s.decision === 'blocked' ? 'decision-blocked' : 'decision-escalated';
-  addLine(`<div class="decision ${dClass}">${s.decisionText}</div>`, 200);
-  addLine(`<div style="color:#94a3b8;font-size:0.8em;margin-top:4px;">Reason: ${s.reason}</div>`);
+  window.suggestAction = function(chip) {
+    document.getElementById('chat-input').value = chip.textContent;
+    window.handleChat();
+  };
 
-  const now = new Date().toISOString().replace('T', ' ').substring(0, 19) + 'Z';
-  addLine(`<div class="audit">
-    <div class="audit-entry">[${now}] Action proposed: ${s.analysis.proposed.split('→')[0].trim()}</div>
-    <div class="audit-entry">[${now}] Policy evaluation: ${s.checks.filter(c=>c.status==='pass').length}/${s.checks.length} PASS, ${s.checks.filter(c=>c.status==='fail').length} FAIL, ${s.checks.filter(c=>c.status==='warn').length} ESCALATE</div>
-    <div class="audit-entry">[${now}] Decision: ${s.decisionText.split('—')[0].trim()}</div>
-    <div class="audit-entry">[${now}] Audit log entry written. Immutable record preserved.</div>
-  </div>`, 200);
-}
+  // Task actions
+  window.approveTask = function(btn) {
+    var item = btn.closest('.task-item');
+    var status = item.querySelector('.task-status');
+    status.className = 'task-status done';
+    status.innerHTML = '✓';
+    item.querySelector('.task-actions').innerHTML = '<span style="font-size:11px;color:var(--green);font-weight:500;">Approved</span>';
+    item.querySelector('.task-meta').textContent = 'Approved just now';
+  };
 
-// Run first scenario on load
-runScenario(0);
+  window.rejectTask = function(btn) {
+    var item = btn.closest('.task-item');
+    item.style.opacity = '0.4';
+    item.querySelector('.task-actions').innerHTML = '<span style="font-size:11px;color:var(--red);font-weight:500;">Rejected</span>';
+    item.querySelector('.task-meta').textContent = 'Rejected just now';
+  };
+
+  // Policy
+  var defaultPolicy = document.getElementById('policy-text').value;
+  window.savePolicy = function() {
+    var msg = document.getElementById('policy-saved');
+    msg.style.display = 'flex';
+    setTimeout(function() { msg.style.display = 'none'; }, 3000);
+  };
+  window.resetPolicy = function() {
+    document.getElementById('policy-text').value = defaultPolicy;
+  };
+
+  // Automations
+  window.addRule = function() {
+    var list = document.getElementById('rule-list');
+    var card = document.createElement('div');
+    card.className = 'rule-card';
+    var html = '<div class="rule-header">';
+    html += '<span class="rule-name">New rule</span>';
+    html += '<div style="display:flex;align-items:center;gap:8px;">';
+    html += '<div class="toggle active" onclick="this.classList.toggle(\'active\')"></div>';
+    html += '<button class="rule-remove" onclick="this.closest(\'.rule-card\').remove()">×</button>';
+    html += '</div></div>';
+    html += '<div class="rule-body">';
+    html += '<div class="rule-row"><span class="rule-keyword if">If</span><input class="rule-input" placeholder="Condition..." /></div>';
+    html += '<div class="rule-row"><span class="rule-keyword then">Then</span><input class="rule-input" placeholder="Action..." /></div>';
+    html += '</div>';
+    card.innerHTML = html;
+    list.appendChild(card);
+    card.querySelector('input').focus();
+  };
+
+  // Scenarios
+  var scenarios = [
+    {
+      query: "Move $2M from overnight deposits into 3-month T-bills to improve yield",
+      lines: [
+        { type: 'section', text: 'ANALYSIS' },
+        { type: 'normal', text: 'Proposed: Reallocate $2,000,000 from Chase Overnight → US 3-Month T-Bills' },
+        { type: 'normal', text: 'Expected: +0.7% yield improvement ($14,000 annualized)' },
+        { type: 'normal', text: 'Duration impact: 1.80y → 1.80y (unchanged)' },
+        { type: 'normal', text: 'Model confidence: 92%' },
+        { type: 'section', text: 'POLICY EVALUATION' },
+        { type: 'pass', text: 'Liquidity ........... $62M → $60M (above $50M minimum)' },
+        { type: 'pass', text: 'Duration ............ 1.80y within 2.5y limit' },
+        { type: 'pass', text: 'Concentration ....... T-Bills at 22% (below 40% max)' },
+        { type: 'pass', text: 'Government min ...... 36.3% (above 30% floor)' },
+        { type: 'pass', text: 'Approval tier ....... $2M < $5M — auto-approval eligible' },
+        { type: 'pass', text: 'Confidence .......... 92% above 85% threshold' },
+        { type: 'decision', cls: 'approved', text: 'APPROVED — Trade auto-executed' },
+        { type: 'muted', text: 'All policy checks passed. Amount within auto-approval limit.' }
+      ]
+    },
+    {
+      query: "Move $10M from overnight deposits into 6-month T-bills for better yield",
+      lines: [
+        { type: 'section', text: 'ANALYSIS' },
+        { type: 'normal', text: 'Proposed: Reallocate $10,000,000 from Chase Overnight → US 6-Month T-Bills' },
+        { type: 'normal', text: 'Expected: +1.2% yield improvement ($120,000 annualized)' },
+        { type: 'normal', text: 'Duration impact: 1.80y → 1.82y' },
+        { type: 'normal', text: 'Model confidence: 91%' },
+        { type: 'section', text: 'POLICY EVALUATION' },
+        { type: 'pass', text: 'Liquidity ........... $62M → $52M (above $50M minimum)' },
+        { type: 'pass', text: 'Duration ............ 1.82y within 2.5y limit' },
+        { type: 'pass', text: 'Concentration ....... T-Bills at 28% (below 40% max)' },
+        { type: 'pass', text: 'Government min ...... 37.8% (above 30% floor)' },
+        { type: 'warn', text: 'Approval tier ....... $10M requires Treasury Manager sign-off' },
+        { type: 'pass', text: 'Confidence .......... 91% above 85% threshold' },
+        { type: 'decision', cls: 'escalated', text: 'ESCALATED — Awaiting Treasury Manager approval' },
+        { type: 'muted', text: 'Trade amount ($10M) exceeds $5M auto-approval limit. All other checks pass.' }
+      ]
+    },
+    {
+      query: "Sweep $40M from liquid assets into a 3-year corporate bond for maximum yield",
+      lines: [
+        { type: 'section', text: 'ANALYSIS' },
+        { type: 'normal', text: 'Proposed: Reallocate $40,000,000 from Chase Overnight → 3-Year Corporate Bond Fund' },
+        { type: 'normal', text: 'Expected: +2.1% yield improvement ($840,000 annualized)' },
+        { type: 'normal', text: 'Duration impact: 1.80y → 2.72y' },
+        { type: 'normal', text: 'Model confidence: 68%' },
+        { type: 'section', text: 'POLICY EVALUATION' },
+        { type: 'fail', text: 'Liquidity ........... $62M → $22M — BELOW $50M minimum' },
+        { type: 'fail', text: 'Duration ............ 2.72y EXCEEDS 2.5y limit' },
+        { type: 'fail', text: 'Concentration ....... Corporate bonds at 28% — EXCEEDS 15% single issuer' },
+        { type: 'pass', text: 'Government min ...... 34.9% (above 30% floor)' },
+        { type: 'warn', text: 'Approval tier ....... $40M requires CFO approval' },
+        { type: 'warn', text: 'Confidence .......... 68% — below 85%, escalation required' },
+        { type: 'decision', cls: 'blocked', text: 'BLOCKED — Multiple policy violations detected' },
+        { type: 'muted', text: '3 violations: liquidity breach, duration limit exceeded, concentration limit exceeded.' }
+      ]
+    },
+    {
+      query: "Move $50M out of government securities into high-yield emerging market bonds",
+      lines: [
+        { type: 'section', text: 'ANALYSIS' },
+        { type: 'normal', text: 'Proposed: Reallocate $50,000,000 from US T-Bills → Emerging Market High-Yield Fund' },
+        { type: 'normal', text: 'Expected: +4.2% yield improvement ($2,100,000 annualized)' },
+        { type: 'normal', text: 'Duration impact: 1.80y → 3.40y' },
+        { type: 'normal', text: 'Model confidence: 42%' },
+        { type: 'section', text: 'POLICY EVALUATION' },
+        { type: 'pass', text: 'Liquidity ........... Liquid assets remain at $55M (above $50M minimum)' },
+        { type: 'fail', text: 'Duration ............ 3.40y FAR EXCEEDS 2.5y limit' },
+        { type: 'fail', text: 'Concentration ....... EM High-Yield at 23.3% — EXCEEDS 15% limit' },
+        { type: 'fail', text: 'Government min ...... Drops to 11.6% — BELOW 30% minimum' },
+        { type: 'warn', text: 'Approval tier ....... $50M requires CFO approval' },
+        { type: 'fail', text: 'Confidence .......... 42% BELOW 60% minimum — blocked' },
+        { type: 'decision', cls: 'blocked', text: 'BLOCKED — Critical violations. Manual override required.' },
+        { type: 'muted', text: '4 violations: duration, concentration, government minimum, confidence too low.' }
+      ]
+    }
+  ];
+
+  window.runScenario = function(idx) {
+    var cards = document.querySelectorAll('.scenario-card');
+    for (var i = 0; i < cards.length; i++) {
+      if (i === idx) { cards[i].classList.add('active'); } else { cards[i].classList.remove('active'); }
+    }
+    var s = scenarios[idx];
+    var out = document.getElementById('terminal-output');
+    out.innerHTML = '';
+    var delay = 0;
+    function addLine(html, extra) {
+      extra = extra || 0;
+      delay += 60 + extra;
+      (function(h, d) {
+        setTimeout(function() { out.innerHTML += h + '\n'; out.scrollTop = out.scrollHeight; }, d);
+      })(html, delay);
+    }
+    addLine('<span class="t-prompt">query:</span> ' + s.query, 100);
+    addLine('');
+    for (var j = 0; j < s.lines.length; j++) {
+      var l = s.lines[j];
+      if (l.type === 'section') addLine('<span class="t-section">━━━ ' + l.text + ' ━━━</span>', 150);
+      else if (l.type === 'pass') addLine('<span class="t-pass">  ✓ ' + l.text + '</span>', 30);
+      else if (l.type === 'fail') addLine('<span class="t-fail">  ✗ ' + l.text + '</span>', 30);
+      else if (l.type === 'warn') addLine('<span class="t-warn">  ⚠ ' + l.text + '</span>', 30);
+      else if (l.type === 'decision') addLine('<div class="t-decision ' + l.cls + '">' + l.text + '</div>', 200);
+      else if (l.type === 'muted') addLine('<span class="t-muted">' + l.text + '</span>');
+      else addLine('  ' + l.text);
+    }
+  };
+
+  // Init first scenario
+  runScenario(0);
+});
 </script>
 </body>
 </html>
